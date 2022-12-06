@@ -8,6 +8,8 @@ from django.shortcuts import get_object_or_404
 from .serializers import RegisterUserSerializer
 from .models import User  
 
+from rest_framework.decorators import api_view
+
 class RegisterUserView(APIView):
     @swagger_auto_schema(request_body=RegisterUserSerializer())
     def post(self, request):
@@ -27,8 +29,13 @@ class RegisterUserView(APIView):
 class DeleteUserView(APIView):
     def delete(self, request, email):
         user = get_object_or_404(User, email=email)
-        if user.is_staff:
+        if user.is_staff or user != request.user:
             return Response(status=403)
         user.delete()
         return Response(status=204)
-        
+
+@api_view(['GET'])
+def check_auth(request):
+    if request.user.is_authenticated:
+        return Response(status=200)
+    return Response(status=401)
